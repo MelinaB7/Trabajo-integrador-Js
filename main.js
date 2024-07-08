@@ -1,50 +1,42 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const dataForm = document.getElementById('dataForm');
-    const dataInput = document.getElementById('dataInput');
-    const dataList = document.getElementById('dataList');
-    const fetchDataBtn = document.getElementById('fetchData');
-    const externalDataDiv = document.getElementById('externalData');
+        const houseForm = document.getElementById('houseForm');
+        const houseInput = document.getElementById('houseInput');
+        const charactersDiv = document.getElementById('characters');
 
-    let data = JSON.parse(localStorage.getItem('data')) || [];
+        houseForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const houseName = houseInput.value.trim();
 
-    const renderData = () => {
-        dataList.innerHTML = '';
-        data.forEach((item, index) => {
-            const li = document.createElement('li');
-            li.textContent = item;
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Eliminar';
-            deleteBtn.addEventListener('click', () => {
-                data.splice(index, 1);
-                localStorage.setItem('data', JSON.stringify(data));
-                renderData();
-            });
-            li.appendChild(deleteBtn);
-            dataList.appendChild(li);
-        });
-    };
+            fetch('https://hp-api.herokuapp.com/api/characters')
+                .then(response => response.json())
+                .then(characters => {
+                    charactersDiv.innerHTML = ''; 
+                    const filteredCharacters = characters.filter(character => character.house.toLowerCase() === houseName.toLowerCase());
 
-    dataForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const newData = dataInput.value;
-        data.push(newData);
-        localStorage.setItem('data', JSON.stringify(data));
-        dataInput.value = '';
-        renderData();
-    });
+                    if (filteredCharacters.length === 0) {
+                        alert('No hemos encontrado su casa, revise que esté bien escrita');
+                    } else {
+                        filteredCharacters.forEach(character => {
+                            const characterDiv = document.createElement('div');
+                            characterDiv.classList.add('character');
 
-    fetchDataBtn.addEventListener('click', () => {
-        fetch('https://jsonplaceholder.typicode.com/posts')
-            .then(response => response.json())
-            .then(json => {
-                externalDataDiv.innerHTML = '<h2>Datos Externos</h2>';
-                json.slice(0, 5).forEach(post => {
-                    const p = document.createElement('p');
-                    p.textContent = `${post.title}: ${post.body}`;
-                    externalDataDiv.appendChild(p);
+                            const nameElement = document.createElement('h3');
+                            nameElement.textContent = character.name;
+
+                            const imageElement = document.createElement('img');
+                            imageElement.src = character.image;
+                            imageElement.alt = `Image of ${character.name}`;
+                            imageElement.style.width = '100px';
+
+                            characterDiv.appendChild(nameElement);
+                            characterDiv.appendChild(imageElement);
+                            charactersDiv.appendChild(characterDiv);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching characters:', error);
+                    charactersDiv.innerHTML = 'Error fetching characters. Please try again later.';
                 });
-            });
-    });
 
-    renderData();
-});
+            houseInput.value = ''; // Clear input field
+        });
